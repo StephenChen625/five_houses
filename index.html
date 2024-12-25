@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>爱因斯坦五房子谜题</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: center;
+            position: relative;
+        }
+        th {
+            background-color: #2980b9;
+            color: #fff;
+            font-size: 16px;
+        }
+        td:first-child {
+            background-color: #ecf0f1;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            background-color: #fff;
+            transition: border-color 0.3s;
+        }
+        select:focus {
+            border-color: #2980b9;
+            outline: none;
+        }
+        .conflict {
+            background-color: #f8d7da !important;
+            border: 2px solid #dc3545 !important;
+        }
+        #constraints {
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #constraints ul {
+            list-style-type: decimal;
+            padding-left: 20px;
+        }
+        .constraint-conflict {
+            background-color: #f8d7da;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 5px solid #dc3545;
+            border-radius: 4px;
+        }
+        #messages {
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            text-align: center;
+            font-size: 18px;
+        }
+        #messages .error {
+            color: #dc3545;
+        }
+        #messages .success {
+            color: #28a745;
+        }
+        #controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #checkBtn {
+            background-color: #2980b9;
+            color: #fff;
+        }
+        #resetBtn {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            table, #constraints {
+                width: 100%;
+                overflow-x: auto;
+            }
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+            button {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            #messages {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>爱因斯坦五房子谜题</h1>
+
+    <table id="puzzleTable">
+        <thead>
+            <tr>
+                <th>类别</th>
+                <th>房子1</th>
+                <th>房子2</th>
+                <th>房子3</th>
+                <th>房子4</th>
+                <th>房子5</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 生成类别行 -->
+            <script>
+                const categories = ['颜色', '国籍', '饮料', '香烟', '宠物'];
+                const dataCategories = ['color', 'nationality', 'drink', 'cigarette', 'pet'];
+                for(let i=0; i<categories.length; i++) {
+                    document.write('<tr>');
+                    document.write(`<td><strong>${categories[i]}</strong></td>`);
+                    for(let j=1; j<=5; j++) {
+                        document.write(`<td><select data-category="${dataCategories[i]}" data-house="${j}">
+                            <option value="">--请选择--</option>
+                        </select></td>`);
+                    }
+                    document.write('</tr>');
+                }
+            </script>
+        </tbody>
+    </table>
+
+    <div id="controls">
+        <button id="checkBtn" onclick="checkConflicts()">检查冲突</button>
+        <button id="resetBtn" onclick="resetTable()">重置</button>
+    </div>
+
+    <div id="messages"></div>
+
+    <h2>约束条件</h2>
+    <div id="constraints">
+        <ul>
+            <li id="constraint1">英国人住在红房子里。</li>
+            <li id="constraint2">瑞典人养狗。</li>
+            <li id="constraint3">丹麦人喝茶。</li>
+            <li id="constraint4">绿房子紧挨着白房子，在白房子的左边。</li>
+            <li id="constraint5">绿房子主人喝咖啡。</li>
+            <li id="constraint6">抽PALL MALL牌香烟的人养鸟。</li>
+            <li id="constraint7">黄房子里的人抽DUNHILL牌的烟。</li>
+            <li id="constraint8">住中间房子的人喝牛奶。</li>
+            <li id="constraint9">挪威人住在第一个房子里（最左边）。</li>
+            <li id="constraint10">抽BLENDS香烟的人和养猫的人相邻。</li>
+            <li id="constraint11">养马的人和抽DUNHILL牌香烟的人相邻。</li>
+            <li id="constraint12">抽BLUEMASTER牌香烟的人喝啤酒。</li>
+            <li id="constraint13">德国人抽PRINCE牌香烟。</li>
+            <li id="constraint14">挪威人和住蓝房子的人相邻。</li>
+            <li id="constraint15">抽BLENDS牌香烟的人和喝矿泉水的人相邻。</li>
+        </ul>
+    </div>
+
+    <script>
+        // 定义所有可能的选项
+        const options = {
+            color: ['红', '绿', '白', '黄', '蓝'],
+            nationality: ['英国', '瑞典', '丹麦', '挪威', '德国'],
+            drink: ['茶', '咖啡', '牛奶', '啤酒', '矿泉水'],
+            cigarette: ['PALL MALL', 'DUNHILL', 'BLENDS', 'BLUEMASTER', 'PRINCE'],
+            pet: ['狗', '鸟', '猫', '马', '鱼']
+        };
+
+        // 初始化下拉菜单
+        window.onload = function() {
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                const category = select.getAttribute('data-category');
+                options[category].forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.text = option;
+                    select.appendChild(opt);
+                });
+                // 添加事件监听
+                select.addEventListener('change', clearConflicts);
+            });
+        };
+
+        // 检查冲突
+        function checkConflicts() {
+            clearConflicts();
+            let conflicts = [];
+            const selections = {};
+
+            // 收集所有选择
+            for(let j=1; j<=5; j++) {
+                selections[j] = {};
+                ['color', 'nationality', 'drink', 'cigarette', 'pet'].forEach(cat => {
+                    const select = document.querySelector(`select[data-house="${j}"][data-category="${cat}"]`);
+                    selections[j][cat] = select.value;
+                });
+            }
+
+            // 定义所有约束条件
+            const constraints = [
+                {id: 'constraint1', check: checkConstraint1},
+                {id: 'constraint2', check: checkConstraint2},
+                {id: 'constraint3', check: checkConstraint3},
+                {id: 'constraint4', check: checkConstraint4},
+                {id: 'constraint5', check: checkConstraint5},
+                {id: 'constraint6', check: checkConstraint6},
+                {id: 'constraint7', check: checkConstraint7},
+                {id: 'constraint8', check: checkConstraint8},
+                {id: 'constraint9', check: checkConstraint9},
+                {id: 'constraint10', check: checkConstraint10},
+                {id: 'constraint11', check: checkConstraint11},
+                {id: 'constraint12', check: checkConstraint12},
+                {id: 'constraint13', check: checkConstraint13},
+                {id: 'constraint14', check: checkConstraint14},
+                {id: 'constraint15', check: checkConstraint15},
+            ];
+
+            // 检查每个约束条件
+            constraints.forEach(constraint => {
+                const result = constraint.check(selections);
+                if(result.conflict) {
+                    conflicts.push({constraintId: constraint.id, details: result.details});
+                }
+            });
+
+            // 检查唯一性
+            ['color', 'nationality', 'drink', 'cigarette', 'pet'].forEach(cat => {
+                let seen = {};
+                for(let j=1; j<=5; j++) {
+                    let val = selections[j][cat];
+                    if(val) {
+                        if(seen[val]) {
+                            conflicts.push({
+                                constraintId: null,
+                                details: [
+                                    {category: cat, house: j, value: val},
+                                    {category: cat, house: seen[val], value: val}
+                                ]
+                            });
+                        } else {
+                            seen[val] = j;
+                        }
+                    }
+                }
+            });
+
+            // 显示冲突
+            if(conflicts.length >0){
+                let msg = '发现冲突：';
+                conflicts.forEach(conflict => {
+                    if(conflict.constraintId){
+                        const constraintElement = document.getElementById(conflict.constraintId);
+                        constraintElement.classList.add('constraint-conflict');
+                        conflict.details.forEach(detail => {
+                            const select = document.querySelector(`select[data-category="${detail.category}"][data-house="${detail.house}"]`);
+                            if(select) {
+                                select.parentElement.classList.add('conflict');
+                            }
+                        });
+                    } else {
+                        // 唯一性冲突
+                        msg += `<div class="constraint-conflict">`;
+                        msg += `类别 <strong>${getCategoryName(conflict.details[0].category)}</strong> 中的 <strong>${conflict.details[0].value}</strong> 在房子${conflict.details[0].house}和房子${conflict.details[1].house}中重复出现。`;
+                        msg += `</div>`;
+                        // 高亮相关单元格
+                        conflict.details.forEach(detail => {
+                            const select = document.querySelector(`select[data-category="${detail.category}"][data-house="${detail.house}"]`);
+                            if(select) {
+                                select.parentElement.classList.add('conflict');
+                            }
+                        });
+                    }
+                });
+                document.getElementById('messages').innerHTML = `<div class="error">${msg}</div>`;
+            } else {
+                // 检查是否所有格子都填写
+                let allFilled = true;
+                for(let j=1; j<=5; j++) {
+                    ['color', 'nationality', 'drink', 'cigarette', 'pet'].forEach(cat => {
+                        if(!selections[j][cat]){
+                            allFilled = false;
+                        }
+                    });
+                }
+                if(allFilled){
+                    document.getElementById('messages').innerHTML = `<div class="success">恭喜！所有选择符合所有约束条件。</div>`;
+                } else {
+                    document.getElementById('messages').innerHTML = `<div class="error">没有冲突，但请继续填写所有选项。</div>`;
+                }
+            }
+        }
+
+        // 获取类别的中文名称
+        function getCategoryName(cat){
+            const names = {
+                color: '颜色',
+                nationality: '国籍',
+                drink: '饮料',
+                cigarette: '香烟',
+                pet: '宠物'
+            };
+            return names[cat] || cat;
+        }
+
+        // 清除所有冲突高亮
+        function clearConflicts(){
+            const cells = document.querySelectorAll('.conflict');
+            cells.forEach(cell => {
+                cell.classList.remove('conflict');
+            });
+            const constraintConflicts = document.querySelectorAll('.constraint-conflict');
+            constraintConflicts.forEach(cc => {
+                cc.classList.remove('constraint-conflict');
+            });
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // 重置表格
+        function resetTable(){
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                select.value = '';
+            });
+            clearConflicts();
+        }
+
+        // 约束条件1：英国人住在红房子里。
+        function checkConstraint1(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].nationality === '英国') {
+                    if(selections[j].color && selections[j].color !== '红') {
+                        conflictDetails.push({category: 'color', house: j});
+                    }
+                }
+                if(selections[j].color === '红') {
+                    if(selections[j].nationality && selections[j].nationality !== '英国') {
+                        conflictDetails.push({category: 'nationality', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件2：瑞典人养狗。
+        function checkConstraint2(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].nationality === '瑞典') {
+                    if(selections[j].pet && selections[j].pet !== '狗') {
+                        conflictDetails.push({category: 'pet', house: j});
+                    }
+                }
+                if(selections[j].pet === '狗') {
+                    if(selections[j].nationality && selections[j].nationality !== '瑞典') {
+                        conflictDetails.push({category: 'nationality', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件3：丹麦人喝茶。
+        function checkConstraint3(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].nationality === '丹麦') {
+                    if(selections[j].drink && selections[j].drink !== '茶') {
+                        conflictDetails.push({category: 'drink', house: j});
+                    }
+                }
+                if(selections[j].drink === '茶') {
+                    if(selections[j].nationality && selections[j].nationality !== '丹麦') {
+                        conflictDetails.push({category: 'nationality', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件4：绿房子紧挨着白房子，在白房子的左边。
+        function checkConstraint4(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].color === '绿') {
+                    if(j === 5 || selections[j+1].color !== '白') {
+                        conflictDetails.push({category: 'color', house: j});
+                        if(j <5){
+                            conflictDetails.push({category: 'color', house: j+1});
+                        }
+                    }
+                }
+                if(selections[j].color === '白') {
+                    if(j ===1 || selections[j-1].color !== '绿') {
+                        conflictDetails.push({category: 'color', house: j});
+                        if(j >1){
+                            conflictDetails.push({category: 'color', house: j-1});
+                        }
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件5：绿房子主人喝咖啡。
+        function checkConstraint5(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].color === '绿') {
+                    if(selections[j].drink && selections[j].drink !== '咖啡') {
+                        conflictDetails.push({category: 'drink', house: j});
+                    }
+                }
+                if(selections[j].drink === '咖啡') {
+                    if(selections[j].color && selections[j].color !== '绿') {
+                        conflictDetails.push({category: 'color', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件6：抽PALL MALL牌香烟的人养鸟。
+        function checkConstraint6(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].cigarette === 'PALL MALL') {
+                    if(selections[j].pet && selections[j].pet !== '鸟') {
+                        conflictDetails.push({category: 'pet', house: j});
+                    }
+                }
+                if(selections[j].pet === '鸟') {
+                    if(selections[j].cigarette && selections[j].cigarette !== 'PALL MALL') {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件7：黄房子里的人抽DUNHILL牌的烟。
+        function checkConstraint7(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].color === '黄') {
+                    if(selections[j].cigarette && selections[j].cigarette !== 'DUNHILL') {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                    }
+                }
+                if(selections[j].cigarette === 'DUNHILL') {
+                    if(selections[j].color && selections[j].color !== '黄') {
+                        conflictDetails.push({category: 'color', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件8：住中间房子的人喝牛奶。
+        function checkConstraint8(selections){
+            let conflictDetails = [];
+            const middle = 3;
+            if(selections[middle].drink && selections[middle].drink !== '牛奶') {
+                conflictDetails.push({category: 'drink', house: middle});
+            }
+            for(let j=1; j<=5; j++) {
+                if(j !== middle && selections[j].drink === '牛奶') {
+                    conflictDetails.push({category: 'drink', house: j});
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件9：挪威人住在第一个房子里（最左边）。
+        function checkConstraint9(selections){
+            let conflictDetails = [];
+            if(selections[1].nationality && selections[1].nationality !== '挪威') {
+                conflictDetails.push({category: 'nationality', house: 1});
+            }
+            for(let j=1; j<=5; j++) {
+                if(j !==1 && selections[j].nationality === '挪威') {
+                    conflictDetails.push({category: 'nationality', house: j});
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件10：抽BLENDS香烟的人和养猫的人相邻。
+        function checkConstraint10(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].cigarette === 'BLENDS') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasCat = adjacent.some(adj => selections[adj].pet === '猫');
+                    if(selections[j].pet === '猫') hasCat = true; // 同一房子
+                    if(!hasCat) {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                        // 尝试标记相邻房子的宠物
+                        adjacent.forEach(adj => {
+                            if(selections[adj].pet === '猫') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'pet', house: adj});
+                            }
+                        });
+                    }
+                }
+                if(selections[j].pet === '猫') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasBlends = adjacent.some(adj => selections[adj].cigarette === 'BLENDS');
+                    if(selections[j].cigarette === 'BLENDS') hasBlends = true; // 同一房子
+                    if(!hasBlends) {
+                        conflictDetails.push({category: 'pet', house: j});
+                        // 尝试标记相邻房子的香烟
+                        adjacent.forEach(adj => {
+                            if(selections[adj].cigarette === 'BLENDS') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'cigarette', house: adj});
+                            }
+                        });
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件11：养马的人和抽DUNHILL牌香烟的人相邻。
+        function checkConstraint11(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].pet === '马') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasDunhill = adjacent.some(adj => selections[adj].cigarette === 'DUNHILL');
+                    if(selections[j].cigarette === 'DUNHILL') hasDunhill = true; // 同一房子
+                    if(!hasDunhill) {
+                        conflictDetails.push({category: 'pet', house: j});
+                        // 尝试标记相邻房子的香烟
+                        adjacent.forEach(adj => {
+                            if(selections[adj].cigarette === 'DUNHILL') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'cigarette', house: adj});
+                            }
+                        });
+                    }
+                }
+                if(selections[j].cigarette === 'DUNHILL') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasHorse = adjacent.some(adj => selections[adj].pet === '马');
+                    if(selections[j].pet === '马') hasHorse = true; // 同一房子
+                    if(!hasHorse) {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                        // 尝试标记相邻房子的宠物
+                        adjacent.forEach(adj => {
+                            if(selections[adj].pet === '马') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'pet', house: adj});
+                            }
+                        });
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件12：抽BLUEMASTER牌香烟的人喝啤酒。
+        function checkConstraint12(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].cigarette === 'BLUEMASTER') {
+                    if(selections[j].drink && selections[j].drink !== '啤酒') {
+                        conflictDetails.push({category: 'drink', house: j});
+                    }
+                }
+                if(selections[j].drink === '啤酒') {
+                    if(selections[j].cigarette && selections[j].cigarette !== 'BLUEMASTER') {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件13：德国人抽PRINCE牌香烟。
+        function checkConstraint13(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].nationality === '德国') {
+                    if(selections[j].cigarette && selections[j].cigarette !== 'PRINCE') {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                    }
+                }
+                if(selections[j].cigarette === 'PRINCE') {
+                    if(selections[j].nationality && selections[j].nationality !== '德国') {
+                        conflictDetails.push({category: 'nationality', house: j});
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件14：挪威人和住蓝房子的人相邻。
+        function checkConstraint14(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].nationality === '挪威') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasBlue = adjacent.some(adj => selections[adj].color === '蓝');
+                    if(selections[j].color === '蓝') hasBlue = true; // 同一房子
+                    if(!hasBlue) {
+                        conflictDetails.push({category: 'nationality', house: j});
+                        // 尝试标记相邻房子的颜色
+                        adjacent.forEach(adj => {
+                            if(selections[adj].color === '蓝') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'color', house: adj});
+                            }
+                        });
+                    }
+                }
+                if(selections[j].color === '蓝') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasNorwegian = adjacent.some(adj => selections[adj].nationality === '挪威');
+                    if(selections[j].nationality === '挪威') hasNorwegian = true; // 同一房子
+                    if(!hasNorwegian) {
+                        conflictDetails.push({category: 'color', house: j});
+                        // 尝试标记相邻房子的国籍
+                        adjacent.forEach(adj => {
+                            if(selections[adj].nationality === '挪威') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'nationality', house: adj});
+                            }
+                        });
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+        // 约束条件15：抽BLENDS牌香烟的人和喝矿泉水的人相邻。
+        function checkConstraint15(selections){
+            let conflictDetails = [];
+            for(let j=1; j<=5; j++) {
+                if(selections[j].cigarette === 'BLENDS') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasWater = adjacent.some(adj => selections[adj].drink === '矿泉水');
+                    if(selections[j].drink === '矿泉水') hasWater = true; // 同一房子
+                    if(!hasWater) {
+                        conflictDetails.push({category: 'cigarette', house: j});
+                        // 尝试标记相邻房子的饮料
+                        adjacent.forEach(adj => {
+                            if(selections[adj].drink === '矿泉水') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'drink', house: adj});
+                            }
+                        });
+                    }
+                }
+                if(selections[j].drink === '矿泉水') {
+                    let adjacent = [];
+                    if(j >1) adjacent.push(j-1);
+                    if(j <5) adjacent.push(j+1);
+                    let hasBlends = adjacent.some(adj => selections[adj].cigarette === 'BLENDS');
+                    if(selections[j].cigarette === 'BLENDS') hasBlends = true; // 同一房子
+                    if(!hasBlends) {
+                        conflictDetails.push({category: 'drink', house: j});
+                        // 尝试标记相邻房子的香烟
+                        adjacent.forEach(adj => {
+                            if(selections[adj].cigarette === 'BLENDS') {
+                                // 正确，不冲突
+                            } else {
+                                conflictDetails.push({category: 'cigarette', house: adj});
+                            }
+                        });
+                    }
+                }
+            }
+            return {conflict: conflictDetails.length > 0, details: conflictDetails};
+        }
+
+    </script>
+
+</body>
+</html>
