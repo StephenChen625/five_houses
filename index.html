@@ -47,7 +47,8 @@
             border-radius: 4px;
             background-color: #fff;
             transition: border-color 0.3s;
-            font-size: 1em; /* 使用相对单位 */
+            font-size: 1.5em; /* 使用相对单位 */
+            text-align: center;
         }
         select:focus {
             border-color: #2980b9;
@@ -156,7 +157,7 @@
                     document.write(`<td><strong>${categories[i]}</strong></td>`);
                     for(let j=1; j<=5; j++) {
                         document.write(`<td><select data-category="${dataCategories[i]}" data-house="${j}">
-                            <option value="">--请选择--</option>
+                            <option value=""></option>
                         </select></td>`);
                     }
                     document.write('</tr>');
